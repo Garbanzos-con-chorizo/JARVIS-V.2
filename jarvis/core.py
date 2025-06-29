@@ -1,9 +1,14 @@
 import os
+import json
 import speech_recognition as sr
 import pyttsx3
 import openai
 from threading import Thread
 import time
+
+from jarvis_core import JarvisCore
+
+__all__ = ["JarvisCore"]
 
 class JarvisCore:
     """Core functionality for the JARVIS assistant with ChatGPT integration."""
@@ -11,16 +16,16 @@ class JarvisCore:
     def __init__(self, log_callback=None):
         self.recognizer = sr.Recognizer()
         self.log_callback = log_callback
-        try:
-            self.tts_engine = pyttsx3.init()
-        except Exception as exc:
-            self.tts_engine = None
-            if self.log_callback:
-                self.log_callback(f"TTS initialization error: {exc}")
-        self.listening = False
-        openai.api_key = os.getenv("OPENAI_API_KEY")
-        if not openai.api_key and self.log_callback:
-            self.log_callback("Warning: OPENAI_API_KEY not set")
+        
+        # Load configuration and set up OpenAI API key
+        config = self._load_config()
+        api_key = config.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
+        openai.api_key = api_key
+        
+        # Model settings
+        self.model = config.get("MODEL") or os.getenv("MODEL", "gpt-3.5-turbo")
+        
+        # Chat history (conversation context)
         self.conversation = [
             {
                 "role": "system",
@@ -30,6 +35,25 @@ class JarvisCore:
                 ),
             }
         ]
+        
+        # Initialize text-to-speech (TTS)
+        try:
+            self.tts_engine = pyttsx3.init()
+        except Exception as exc:
+            self.tts_engine = None
+            if self.log_callback:
+                self.log_callback(f"TTS initialization error: {exc}")
+        self.listening = False
+
+    @staticmethod
+    def _load_config():
+        """Load configuration from config.json if present."""
+        config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.json")
+        try:
+            with open(config_path, "r", encoding="utf-8") as file:
+                return json.load(file)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return {}
 
     def _speak(self, text: str):
         """Speak text using text-to-speech."""
@@ -99,6 +123,7 @@ class JarvisCore:
             self._speak(response)
 
     def start(self):
+        """Start listening in a separate thread."""
         thread = Thread(target=self.listen, daemon=True)
         thread.start()
         return thread
@@ -106,17 +131,19 @@ class JarvisCore:
     def _chatgpt_response(self, prompt: str) -> str:
         """Query the OpenAI ChatGPT API for a response."""
         self.conversation.append({"role": "user", "content": prompt})
+
         if not openai.api_key:
             if self.log_callback:
                 self.log_callback("OPENAI_API_KEY not configured.")
             reply = "Apologies, I'm currently unable to access my knowledge base."
             self.conversation.append({"role": "assistant", "content": reply})
             return reply
+        
         max_retries = 3
         for attempt in range(1, max_retries + 1):
             try:
                 response = openai.ChatCompletion.create(
-                    model="gpt-3.5-turbo", messages=self.conversation
+                    model=self.model, messages=self.conversation
                 )
                 reply = response.choices[0].message["content"].strip()
                 break
