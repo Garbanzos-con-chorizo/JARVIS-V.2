@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
-from .core import JarvisCore
+from jarvis_core import JarvisCore
 
 class JarvisGUI(tk.Tk):
     def __init__(self):
