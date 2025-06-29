@@ -1,8 +1,10 @@
 import os
 import speech_recognition as sr
 import pyttsx3
-import openai
 from threading import Thread
+
+from modules.chatgpt_module import ChatGPTModule
+from modules.lab_module import LabModule
 
 class JarvisCore:
     """Core functionality for the JARVIS assistant with ChatGPT integration."""
@@ -12,16 +14,25 @@ class JarvisCore:
         self.tts_engine = pyttsx3.init()
         self.listening = False
         self.log_callback = log_callback
-        openai.api_key = os.getenv("OPENAI_API_KEY")
-        self.conversation = [
-            {
-                "role": "system",
-                "content": (
-                    "You are JARVIS, an advanced AI assistant. Respond in a polite,"
-                    " concise manner."
-                ),
-            }
-        ]
+
+        self.modules = {}
+        self._load_modules()
+
+    def _load_modules(self):
+        """Instantiate available modules."""
+        self.modules["chatgpt"] = ChatGPTModule()
+        self.modules["lab"] = LabModule()
+
+    def call_module(self, name: str, *args, **kwargs):
+        """Call a method on a loaded module."""
+        module = self.modules.get(name)
+        if not module:
+            raise ValueError(f"Module {name} not loaded")
+        if hasattr(module, "respond"):
+            return module.respond(*args, **kwargs)
+        if hasattr(module, "get_temperature"):
+            return module.get_temperature(*args, **kwargs)
+        raise AttributeError(f"Module {name} has no supported interface")
 
     def _speak(self, text: str):
         """Speak text using text-to-speech."""
@@ -61,6 +72,12 @@ class JarvisCore:
                 self.log_callback(f"JARVIS: {reply}")
             self._speak(reply)
             self.stop_listening()
+        elif "temperature" in command:
+            temp = self.call_module("lab")
+            response = f"The current temperature is {temp} degrees Celsius."
+            if self.log_callback:
+                self.log_callback(f"JARVIS: {response}")
+            self._speak(response)
         else:
             response = self._chatgpt_response(command)
             if self.log_callback:
@@ -73,14 +90,8 @@ class JarvisCore:
         return thread
 
     def _chatgpt_response(self, prompt: str) -> str:
-        """Query the OpenAI ChatGPT API for a response."""
-        self.conversation.append({"role": "user", "content": prompt})
+        """Query the ChatGPT module for a response."""
         try:
-            response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo", messages=self.conversation
-            )
-            reply = response.choices[0].message["content"].strip()
+            return self.call_module("chatgpt", prompt)
         except Exception as exc:
-            reply = f"I'm sorry, I encountered an error: {exc}"
-        self.conversation.append({"role": "assistant", "content": reply})
-        return reply
+            return f"I'm sorry, I encountered an error: {exc}"
