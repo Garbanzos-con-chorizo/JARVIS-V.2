@@ -105,6 +105,10 @@ class JarvisCore:
     def stop_listening(self):
         self.listening = False
 
+    def stop(self):
+        """Stop the assistant via the public interface."""
+        self.stop_listening()
+
     def _handle_command(self, command: str):
         """Process a recognized voice command."""
         command = command.lower()
@@ -115,7 +119,7 @@ class JarvisCore:
             if self.log_callback:
                 self.log_callback(f"JARVIS: {reply}")
             self._speak(reply)
-            self.stop_listening()
+            self.stop()
         else:
             response = self._chatgpt_response(command)
             if self.log_callback:
