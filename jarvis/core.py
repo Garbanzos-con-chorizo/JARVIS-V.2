@@ -2,7 +2,7 @@ import os
 import speech_recognition as sr
 import pyttsx3
 import openai
-from threading import Thread
+from concurrent.futures import ThreadPoolExecutor
 
 class JarvisCore:
     """Core functionality for the JARVIS assistant with ChatGPT integration."""
@@ -12,6 +12,8 @@ class JarvisCore:
         self.tts_engine = pyttsx3.init()
         self.listening = False
         self.log_callback = log_callback
+        self.executor = ThreadPoolExecutor()
+        self.tasks = []
         openai.api_key = os.getenv("OPENAI_API_KEY")
         self.conversation = [
             {
@@ -68,9 +70,15 @@ class JarvisCore:
             self._speak(response)
 
     def start(self):
-        thread = Thread(target=self.listen, daemon=True)
-        thread.start()
-        return thread
+        """Start the voice listener in a background thread."""
+        future = self.executor.submit(self.listen)
+        self.tasks.append(future)
+        return future
+
+    def stop(self):
+        """Stop all running tasks."""
+        self.stop_listening()
+        self.executor.shutdown(wait=False)
 
     def _chatgpt_response(self, prompt: str) -> str:
         """Query the OpenAI ChatGPT API for a response."""

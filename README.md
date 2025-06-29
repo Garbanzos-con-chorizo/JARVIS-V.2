@@ -27,6 +27,10 @@ python main.py
 Click **Start** to begin listening. Say "shutdown" to stop the assistant.
 The GUI now includes a loading screen, animated background and a live log of the conversation.
 
+### Parallel Tasks
+
+`JarvisCore` runs the voice listener in a `ThreadPoolExecutor` so modules can operate in parallel. Both the core and GUI expose `start()` and `stop()` methods if you wish to manage them separately.
+
 ## License
 
 This project is licensed under the MIT License.

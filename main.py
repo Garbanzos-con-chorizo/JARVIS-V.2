@@ -3,7 +3,7 @@ from jarvis.gui import JarvisGUI
 
 def main():
     app = JarvisGUI()
-    app.mainloop()
+    app.start()
 
 
 if __name__ == "__main__":
