@@ -1,4 +1,5 @@
 import os
+import json
 import speech_recognition as sr
 import pyttsx3
 import openai
@@ -12,7 +13,10 @@ class JarvisCore:
         self.tts_engine = pyttsx3.init()
         self.listening = False
         self.log_callback = log_callback
-        openai.api_key = os.getenv("OPENAI_API_KEY")
+        config = self._load_config()
+        api_key = config.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
+        openai.api_key = api_key
+        self.model = config.get("MODEL") or os.getenv("MODEL", "gpt-3.5-turbo")
         self.conversation = [
             {
                 "role": "system",
@@ -22,6 +26,16 @@ class JarvisCore:
                 ),
             }
         ]
+
+    @staticmethod
+    def _load_config():
+        """Load configuration from config.json if present."""
+        config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.json")
+        try:
+            with open(config_path, "r", encoding="utf-8") as file:
+                return json.load(file)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return {}
 
     def _speak(self, text: str):
         """Speak text using text-to-speech."""
@@ -77,7 +91,7 @@ class JarvisCore:
         self.conversation.append({"role": "user", "content": prompt})
         try:
             response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo", messages=self.conversation
+                model=self.model, messages=self.conversation
             )
             reply = response.choices[0].message["content"].strip()
         except Exception as exc:
