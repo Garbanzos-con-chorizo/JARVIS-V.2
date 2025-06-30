@@ -1,6 +1,6 @@
 # JARVIS-V.2
 
-A minimal voice assistant reminiscent of JARVIS from the Iron Man films. The project now integrates with OpenAI's ChatGPT API for more natural responses and features an enhanced Tkinter GUI.
+A minimal voice assistant reminiscent of JARVIS from the Iron Man films. The project now integrates with OpenAI's ChatGPT API for more natural responses and features a PyQt5 GUI.
 
 ## Requirements
 
@@ -9,6 +9,9 @@ Install dependencies with:
 ```bash
 pip install -r requirements.txt
 ```
+
+PyQt5 provides the graphical interface. On some Linux distributions you may need
+to install system Qt packages before installing the Python dependencies.
 
 The assistant uses the default system microphone and speakers.
 
