@@ -29,7 +29,7 @@ The GUI now includes a loading screen, animated background and a live log of the
 
 ### Parallel Tasks
 
-`JarvisCore` runs the voice listener in a `ThreadPoolExecutor` so modules can operate in parallel. Both the core and GUI expose `start()` and `stop()` methods if you wish to manage them separately.
+`JarvisCore` starts its own asyncio event loop and runs the voice listener in a background thread so modules can operate in parallel. Both the core and GUI expose `start()` and `stop()` methods if you wish to manage them independently.
 
 ## License
 
