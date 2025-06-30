@@ -83,3 +83,12 @@ class JarvisGUI(tk.Tk):
         self.stop_button.config(state=tk.DISABLED)
         self.log_message("JARVIS: Assistant stopped.")
         messagebox.showinfo("JARVIS", "Assistant stopped.")
+
+    def start(self):
+        """Run the GUI event loop."""
+        self.mainloop()
+
+    def stop(self):
+        """Stop the assistant and close the window."""
+        self.core.stop()
+        self.destroy()
