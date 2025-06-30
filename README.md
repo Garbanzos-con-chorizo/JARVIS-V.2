@@ -13,6 +13,19 @@ pip install -r requirements.txt
 PyQt5 provides the graphical interface. On some Linux distributions you may need
 to install system Qt packages before installing the Python dependencies.
 
+### Windows Setup
+
+An automatic PowerShell script is provided for Windows users. Run it from a
+PowerShell prompt to create a virtual environment and install all
+dependencies:
+
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process -Force
+./install_windows.ps1
+```
+
+Use the optional `-InstallPython` flag if Python 3 is not already installed.
+
 The assistant uses the default system microphone and speakers.
 
 Configuration values such as `OPENAI_API_KEY` can be placed in `config.json` in the project root. The assistant will fall back to environment variables if the file is absent or keys are missing.
