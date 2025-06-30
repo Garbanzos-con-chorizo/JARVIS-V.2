@@ -1,85 +1,122 @@
-import tkinter as tk
-from tkinter import messagebox, ttk
+from __future__ import annotations
+
+import os
+from PyQt5.QtCore import Qt, QTimer, QObject, QEvent
+from PyQt5.QtGui import QMovie
+from PyQt5.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
+
 from jarvis_core import JarvisCore
 
-class JarvisGUI(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title("JARVIS Assistant")
-        self.geometry("500x400")
-        self.configure(bg="black")
 
-        self.log_text = None
-        self.loading_frame = None
-        self.main_frame = None
+class JarvisGUI(QMainWindow):
+    """PyQt5 interface for the JARVIS assistant."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.setWindowTitle("JARVIS Assistant")
+        self.resize(500, 400)
+
+        self.log_text: QTextEdit | None = None
+        self.loading_label: QLabel | None = None
+        self.background_movie: QMovie | None = None
+        self.bg_label: QLabel | None = None
+        self.central: QWidget | None = None
 
         self._show_loading()
-        # Initialize core with callback
         self.core = JarvisCore(log_callback=self.log_message)
 
-    def _show_loading(self):
+    # --------------------------- UI Helpers ---------------------------
+    def _show_loading(self) -> None:
         """Display a temporary loading screen."""
-        self.loading_frame = tk.Frame(self, bg="black")
-        self.loading_frame.pack(fill="both", expand=True)
+        self.loading_label = QLabel()
+        self.loading_label.setAlignment(Qt.AlignCenter)
+        movie_path = os.path.join("jarvis", "assets", "loading.gif")
+        if os.path.exists(movie_path):
+            movie = QMovie(movie_path)
+            self.loading_label.setMovie(movie)
+            movie.start()
+        else:
+            self.loading_label.setText("Loading...")
+            self.loading_label.setStyleSheet("color: cyan;")
+        self.setCentralWidget(self.loading_label)
+        QTimer.singleShot(2000, self._init_main_screen)
 
-        try:
-            self.loading_img = tk.PhotoImage(file="jarvis/assets/loading.gif")
-            tk.Label(self.loading_frame, image=self.loading_img, bg="black").pack(expand=True)
-        except Exception:
-            tk.Label(self.loading_frame, text="Loading...", fg="cyan", bg="black", font=("Arial", 18)).pack(expand=True)
-
-        self.after(2000, self._init_main_screen)
-
-    def _init_main_screen(self):
+    def _init_main_screen(self) -> None:
         """Create the main interactive interface."""
-        if self.loading_frame:
-            self.loading_frame.destroy()
-        self.main_frame = tk.Frame(self, bg="black")
-        self.main_frame.pack(fill="both", expand=True)
+        if self.loading_label:
+            self.loading_label.deleteLater()
+            self.loading_label = None
 
-        try:
-            self.bg_img = tk.PhotoImage(file="jarvis/assets/background.gif")
-            bg_label = tk.Label(self.main_frame, image=self.bg_img)
-            bg_label.place(relwidth=1, relheight=1)
-        except Exception:
-            self.main_frame.configure(bg="black")
+        self.central = QWidget()
+        layout = QVBoxLayout(self.central)
+        self.setCentralWidget(self.central)
 
-        self.log_text = tk.Text(self.main_frame, state=tk.DISABLED, bg="black", fg="cyan")
-        self.log_text.pack(fill="both", expand=True, padx=10, pady=10)
+        # Background animation
+        bg_path = os.path.join("jarvis", "assets", "background.gif")
+        if os.path.exists(bg_path):
+            self.background_movie = QMovie(bg_path)
+            self.bg_label = QLabel(self.central)
+            self.bg_label.setMovie(self.background_movie)
+            self.bg_label.setScaledContents(True)
+            self.background_movie.start()
+            self.bg_label.setGeometry(self.rect())
+            self.bg_label.lower()
+            self.central.installEventFilter(self)
 
-        control_frame = tk.Frame(self.main_frame, bg="black")
-        control_frame.pack(pady=10)
+        # Log area
+        self.log_text = QTextEdit()
+        self.log_text.setReadOnly(True)
+        self.log_text.setStyleSheet("background-color: black; color: cyan;")
+        layout.addWidget(self.log_text)
 
-        self.start_button = tk.Button(control_frame, text="Start", command=self.start_listening)
-        self.start_button.pack(side=tk.LEFT, padx=5)
+        # Control buttons
+        controls = QHBoxLayout()
+        layout.addLayout(controls)
+        self.start_button = QPushButton("Start")
+        self.start_button.clicked.connect(self.start_listening)
+        controls.addWidget(self.start_button)
+        self.stop_button = QPushButton("Stop")
+        self.stop_button.setEnabled(False)
+        self.stop_button.clicked.connect(self.stop_listening)
+        controls.addWidget(self.stop_button)
 
-        self.stop_button = tk.Button(control_frame, text="Stop", command=self.stop_listening, state=tk.DISABLED)
-        self.stop_button.pack(side=tk.LEFT, padx=5)
+    # --------------------------- Event Filter ---------------------------
+    def eventFilter(self, source: QObject, event: QEvent) -> bool:
+        if source is self.central and self.bg_label and event.type() == event.Resize:
+            self.bg_label.setGeometry(self.central.rect())
+        return super().eventFilter(source, event)
 
-    def log_message(self, message: str):
-        """Append a message to the log view in a thread-safe way."""
+    # --------------------------- Public API ---------------------------
+    def log_message(self, message: str) -> None:
+        """Append a message to the log view in a thread-safe manner."""
         if not self.log_text:
             return
 
-        def append():
-            self.log_text.config(state=tk.NORMAL)
-            self.log_text.insert(tk.END, message + "\n")
-            self.log_text.see(tk.END)
-            self.log_text.config(state=tk.DISABLED)
+        def append() -> None:
+            self.log_text.append(message)
 
-        # Ensure updates from background threads do not interfere with Tkinter
-        self.after(0, append)
+        QTimer.singleShot(0, append)
 
-    def start_listening(self):
+    def start_listening(self) -> None:
         """Start the JARVIS core."""
         self.core.start()
-        self.start_button.config(state=tk.DISABLED)
-        self.stop_button.config(state=tk.NORMAL)
+        self.start_button.setEnabled(False)
+        self.stop_button.setEnabled(True)
 
-    def stop_listening(self):
+    def stop_listening(self) -> None:
         """Stop the JARVIS core."""
         self.core.stop()
-        self.start_button.config(state=tk.NORMAL)
-        self.stop_button.config(state=tk.DISABLED)
+        self.start_button.setEnabled(True)
+        self.stop_button.setEnabled(False)
         self.log_message("JARVIS: Assistant stopped.")
-        messagebox.showinfo("JARVIS", "Assistant stopped.")
+        QMessageBox.information(self, "JARVIS", "Assistant stopped.")
+

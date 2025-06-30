@@ -1,9 +1,13 @@
+from PyQt5.QtWidgets import QApplication
+
 from jarvis.gui import JarvisGUI
 
 
-def main():
-    app = JarvisGUI()
-    app.mainloop()
+def main() -> None:
+    qt_app = QApplication([])
+    window = JarvisGUI()
+    window.show()
+    qt_app.exec_()
 
 
 if __name__ == "__main__":
