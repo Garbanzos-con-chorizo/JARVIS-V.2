@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import (
 )
 
 from jarvis_core import JarvisCore
+from .lab import LabModule
 
 
 class JarvisGUI(QMainWindow):
@@ -33,6 +34,7 @@ class JarvisGUI(QMainWindow):
 
         self._show_loading()
         self.core = JarvisCore(log_callback=self.log_message)
+        self.lab_module: LabModule | None = None
 
     # --------------------------- UI Helpers ---------------------------
     def _show_loading(self) -> None:
@@ -88,6 +90,9 @@ class JarvisGUI(QMainWindow):
         self.stop_button.setEnabled(False)
         self.stop_button.clicked.connect(self.stop_listening)
         controls.addWidget(self.stop_button)
+        self.lab_button = QPushButton("Lab")
+        self.lab_button.clicked.connect(self.open_lab)
+        controls.addWidget(self.lab_button)
 
     # --------------------------- Event Filter ---------------------------
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
@@ -119,4 +124,11 @@ class JarvisGUI(QMainWindow):
         self.stop_button.setEnabled(False)
         self.log_message("JARVIS: Assistant stopped.")
         QMessageBox.information(self, "JARVIS", "Assistant stopped.")
+
+    def open_lab(self) -> None:
+        """Launch the Lab module window."""
+        if not self.lab_module:
+            self.lab_module = LabModule(self.core)
+        self.lab_module.activate()
+
 
