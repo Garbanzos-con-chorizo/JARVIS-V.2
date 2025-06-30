@@ -30,6 +30,16 @@ python main.py
 Click **Start** to begin listening. Say "shutdown" to stop the assistant.
 The GUI now includes a loading screen, animated background and a live log of the conversation.
 
+### Lab Module
+
+The **Lab** button in the GUI opens a module that connects to a Raspberry Pi for
+environment readings. Run `raspi_lab_server.py` on the Pi to expose sensor data
+over HTTP. The server is headless and simply responds to requests for data or
+pump toggles. The module displays temperature, humidity and pump status, and
+warns if the Pi reports hazardous gas levels. Set the `LAB_SERVER_URL`
+environment variable on the GUI machine if the server is not on
+`localhost:8000`.
+
 ## License
 
 This project is licensed under the MIT License.
