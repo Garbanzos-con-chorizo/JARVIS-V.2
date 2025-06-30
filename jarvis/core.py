@@ -1,25 +1,33 @@
 import os
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
-from threading import Thread
-
+import json
 import speech_recognition as sr
 import pyttsx3
 import openai
+from threading import Thread
+import time
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
+from jarvis_core import JarvisCore
+
+__all__ = ["JarvisCore"]
 
 class JarvisCore:
     """Core functionality for the JARVIS assistant with ChatGPT integration."""
 
     def __init__(self, log_callback=None, loop: asyncio.AbstractEventLoop | None = None):
         self.recognizer = sr.Recognizer()
-        self.tts_engine = pyttsx3.init()
-        self.listening = False
         self.log_callback = log_callback
-        self.loop = loop or asyncio.new_event_loop()
-        self.executor = ThreadPoolExecutor()
-        self.tasks: list[asyncio.Future] = []
-        self.loop_thread = None
-        openai.api_key = os.getenv("OPENAI_API_KEY")
+        
+        # Load configuration and set up OpenAI API key
+        config = self._load_config()
+        api_key = config.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
+        openai.api_key = api_key
+        
+        # Model settings
+        self.model = config.get("MODEL") or os.getenv("MODEL", "gpt-3.5-turbo")
+        
+        # Chat history (conversation context)
         self.conversation = [
             {
                 "role": "system",
@@ -29,6 +37,32 @@ class JarvisCore:
                 ),
             }
         ]
+        
+        # Initialize text-to-speech (TTS)
+        try:
+            self.tts_engine = pyttsx3.init()
+        except Exception as exc:
+            self.tts_engine = None
+            if self.log_callback:
+                self.log_callback(f"TTS initialization error: {exc}")
+        
+        self.listening = False
+        
+        # AsyncIO and ThreadPoolExecutor setup for parallel execution
+        self.loop = loop or asyncio.new_event_loop()
+        self.executor = ThreadPoolExecutor()
+        self.tasks: list[asyncio.Future] = []
+        self.loop_thread = None
+
+    @staticmethod
+    def _load_config():
+        """Load configuration from config.json if present."""
+        config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.json")
+        try:
+            with open(config_path, "r", encoding="utf-8") as file:
+                return json.load(file)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return {}
 
     def _speak_blocking(self, text: str):
         """Blocking text-to-speech helper."""
@@ -39,23 +73,23 @@ class JarvisCore:
         """Speak text asynchronously."""
         await self.loop.run_in_executor(self.executor, self._speak_blocking, text)
 
-    async def listen(self):
+    def listen(self):
         """Continuously listen for voice commands."""
         self.listening = True
         greeting = "How may I assist you?"
         if self.log_callback:
             self.log_callback(f"JARVIS: {greeting}")
-        await self._speak(greeting)
+        self._speak(greeting)
+        
         while self.listening:
             try:
+                # Async microphone listening
                 with sr.Microphone() as source:
-                    audio = await self.loop.run_in_executor(
-                        self.executor, self.recognizer.listen, source
-                    )
-                command = await self.loop.run_in_executor(
-                    self.executor, self.recognizer.recognize_google, audio
-                )
+                    audio = await self.loop.run_in_executor(self.executor, self.recognizer.listen, source)
+                
+                command = await self.loop.run_in_executor(self.executor, self.recognizer.recognize_google, audio)
                 await self._handle_command(command)
+            
             except sr.UnknownValueError:
                 await self._speak("I beg your pardon, sir, I did not catch that.")
             except Exception as exc:
@@ -82,17 +116,17 @@ class JarvisCore:
                 self.log_callback(f"JARVIS: {response}")
             await self._speak(response)
 
-    def _ensure_loop_thread(self):
-        if not self.loop_thread:
-            self.loop_thread = Thread(target=self.loop.run_forever, daemon=True)
-            self.loop_thread.start()
-
     def start(self):
         """Start the voice listener as an asynchronous task."""
         self._ensure_loop_thread()
         task = asyncio.run_coroutine_threadsafe(self.listen(), self.loop)
         self.tasks.append(task)
         return task
+
+    def _ensure_loop_thread(self):
+        if not self.loop_thread:
+            self.loop_thread = Thread(target=self.loop.run_forever, daemon=True)
+            self.loop_thread.start()
 
     def stop(self):
         """Stop all running tasks."""
@@ -109,15 +143,35 @@ class JarvisCore:
     async def _chatgpt_response(self, prompt: str) -> str:
         """Query the OpenAI ChatGPT API for a response."""
         self.conversation.append({"role": "user", "content": prompt})
-        try:
-            response = await self.loop.run_in_executor(
-                self.executor,
-                lambda: openai.ChatCompletion.create(
-                    model="gpt-3.5-turbo", messages=self.conversation
-                ),
-            )
-            reply = response.choices[0].message["content"].strip()
-        except Exception as exc:
-            reply = f"I'm sorry, I encountered an error: {exc}"
+
+        if not openai.api_key:
+            if self.log_callback:
+                self.log_callback("OPENAI_API_KEY not configured.")
+            reply = "Apologies, I'm currently unable to access my knowledge base."
+            self.conversation.append({"role": "assistant", "content": reply})
+            return reply
+        
+        max_retries = 3
+        for attempt in range(1, max_retries + 1):
+            try:
+                response = await self.loop.run_in_executor(
+                    self.executor,
+                    lambda: openai.ChatCompletion.create(
+                        model=self.model, messages=self.conversation
+                    ),
+                )
+                reply = response.choices[0].message["content"].strip()
+                break
+            except Exception as exc:
+                if self.log_callback:
+                    self.log_callback(f"ChatGPT error (attempt {attempt}): {exc}")
+                if attempt == max_retries:
+                    reply = (
+                        "Apologies, I'm experiencing difficulties reaching my knowledge base."
+                    )
+                    break
+                await asyncio.sleep(1)
+        
         self.conversation.append({"role": "assistant", "content": reply})
         return reply
+

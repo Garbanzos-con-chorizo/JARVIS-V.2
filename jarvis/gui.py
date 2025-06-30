@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
-from .core import JarvisCore
+from jarvis_core import JarvisCore
 
 class JarvisGUI(tk.Tk):
     def __init__(self):
@@ -57,21 +57,28 @@ class JarvisGUI(tk.Tk):
         self.stop_button.pack(side=tk.LEFT, padx=5)
 
     def log_message(self, message: str):
-        """Append a message to the log view."""
+        """Append a message to the log view in a thread-safe way."""
         if not self.log_text:
             return
-        self.log_text.config(state=tk.NORMAL)
-        self.log_text.insert(tk.END, message + "\n")
-        self.log_text.see(tk.END)
-        self.log_text.config(state=tk.DISABLED)
+
+        def append():
+            self.log_text.config(state=tk.NORMAL)
+            self.log_text.insert(tk.END, message + "\n")
+            self.log_text.see(tk.END)
+            self.log_text.config(state=tk.DISABLED)
+
+        # Ensure updates from background threads do not interfere with Tkinter
+        self.after(0, append)
 
     def start_listening(self):
+        """Start the JARVIS core."""
         self.core.start()
         self.start_button.config(state=tk.DISABLED)
         self.stop_button.config(state=tk.NORMAL)
 
     def stop_listening(self):
-        self.core.stop_listening()
+        """Stop the JARVIS core."""
+        self.core.stop()
         self.start_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
         self.log_message("JARVIS: Assistant stopped.")

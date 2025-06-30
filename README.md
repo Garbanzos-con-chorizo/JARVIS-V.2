@@ -12,7 +12,7 @@ pip install -r requirements.txt
 
 The assistant uses the default system microphone and speakers.
 
-Set the `OPENAI_API_KEY` environment variable with your OpenAI API key to enable ChatGPT responses.
+Configuration values such as `OPENAI_API_KEY` can be placed in `config.json` in the project root. The assistant will fall back to environment variables if the file is absent or keys are missing.
 
 Optionally place `loading.gif` and `background.gif` in `jarvis/assets/` to customize the loading screen and animated background. If these files are not present the GUI falls back to simple colors.
 
