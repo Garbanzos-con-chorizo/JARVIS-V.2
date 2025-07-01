@@ -29,6 +29,7 @@ Use the optional `-InstallPython` flag if Python 3 is not already installed.
 The assistant uses the default system microphone and speakers.
 
 Configuration values such as `OPENAI_API_KEY` can be placed in `config.json` in the project root. The assistant will fall back to environment variables if the file is absent or keys are missing.
+The `ChatGPTModule` wraps all OpenAI API calls and retries automatically on errors. Should the API be unreachable or the key missing, the assistant replies with a short apology instead of crashing.
 
 Optionally place `loading.gif` and `background.gif` in `jarvis/assets/` to customize the loading screen and animated background. If these files are not present the GUI falls back to simple colors.
 
