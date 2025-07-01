@@ -1,8 +1,8 @@
-import os
 import speech_recognition as sr
 import pyttsx3
-import openai
 from threading import Thread
+
+from .chatgpt import ChatGPTModule
 
 class JarvisCore:
     """Core functionality for the JARVIS assistant with ChatGPT integration."""
@@ -12,16 +12,8 @@ class JarvisCore:
         self.tts_engine = pyttsx3.init()
         self.listening = False
         self.log_callback = log_callback
-        openai.api_key = os.getenv("OPENAI_API_KEY")
-        self.conversation = [
-            {
-                "role": "system",
-                "content": (
-                    "You are JARVIS, an advanced AI assistant. Respond in a polite,"
-                    " concise manner."
-                ),
-            }
-        ]
+
+        self.chatgpt = ChatGPTModule(log_callback=log_callback)
 
     def _speak(self, text: str):
         """Speak text using text-to-speech."""
@@ -73,14 +65,5 @@ class JarvisCore:
         return thread
 
     def _chatgpt_response(self, prompt: str) -> str:
-        """Query the OpenAI ChatGPT API for a response."""
-        self.conversation.append({"role": "user", "content": prompt})
-        try:
-            response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo", messages=self.conversation
-            )
-            reply = response.choices[0].message["content"].strip()
-        except Exception as exc:
-            reply = f"I'm sorry, I encountered an error: {exc}"
-        self.conversation.append({"role": "assistant", "content": reply})
-        return reply
+        """Query the ChatGPT module for a response."""
+        return self.chatgpt.ask(prompt)
