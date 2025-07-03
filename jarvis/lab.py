@@ -12,6 +12,8 @@ from PyQt5.QtWidgets import (
     QMessageBox,
 )
 
+from .data import DataManager
+
 
 LAB_SERVER_URL = os.environ.get("LAB_SERVER_URL", "http://localhost:8000")
 
@@ -23,6 +25,8 @@ class LabModule(QWidget):
         super().__init__(parent)
         self.core = core
         self.setWindowTitle("Lab Module")
+
+        DataManager.init_db()
 
         layout = QVBoxLayout(self)
         self.temp_label = QLabel("Temp: --°C")
@@ -62,6 +66,13 @@ class LabModule(QWidget):
         except Exception as exc:
             self.status_label.setText(f"Error: {exc}")
             return
+
+        DataManager.log_environment(
+            data.get("temperature"),
+            data.get("humidity"),
+            data.get("pump"),
+            data.get("gas_alert"),
+        )
 
         self.temp_label.setText(f"Temp: {data.get('temperature', '--')}°C")
         self.humid_label.setText(f"Humidity: {data.get('humidity', '--')}%")

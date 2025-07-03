@@ -2,6 +2,7 @@ import speech_recognition as sr
 import pyttsx3
 from threading import Thread
 
+from jarvis.data import DataManager
 from .chatgpt import ChatGPTModule
 
 class JarvisCore:
@@ -12,6 +13,8 @@ class JarvisCore:
         self.tts_engine = pyttsx3.init()
         self.listening = False
         self.log_callback = log_callback
+
+        DataManager.init_db()
 
         self.chatgpt = ChatGPTModule(log_callback=log_callback)
 
@@ -47,16 +50,19 @@ class JarvisCore:
         command = command.lower()
         if self.log_callback:
             self.log_callback(f"User: {command}")
+        DataManager.log_conversation("user", command)
         if "shutdown" in command:
             reply = "Shutting down. Goodbye, sir."
             if self.log_callback:
                 self.log_callback(f"JARVIS: {reply}")
+            DataManager.log_conversation("jarvis", reply)
             self._speak(reply)
             self.stop_listening()
         else:
             response = self._chatgpt_response(command)
             if self.log_callback:
                 self.log_callback(f"JARVIS: {response}")
+            DataManager.log_conversation("jarvis", response)
             self._speak(response)
 
     def start(self):
