@@ -58,6 +58,13 @@ warns if the Pi reports hazardous gas levels. Set the `LAB_SERVER_URL`
 environment variable on the GUI machine if the server is not on
 `localhost:8000`.
 
+### Data Logging
+
+`jarvis/data.py` provides the `DataManager` used to log conversation history
+and lab readings to an SQLite database named `jarvis.db`. Helper methods such
+as `average_temperature()` summarise logged data for future display or
+analysis.
+
 ## License
 
 This project is licensed under the MIT License.
