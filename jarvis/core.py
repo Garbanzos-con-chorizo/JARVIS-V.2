@@ -150,7 +150,6 @@ class JarvisCore:
         command = command.lower()
         if self.log_callback:
             self.log_callback(f"User: {command}")
-
         if command.startswith("turn on "):
             device = command[len("turn on "):].strip()
             self.iot.publish_command(device, "on")
@@ -166,6 +165,7 @@ class JarvisCore:
                 self.log_callback(f"JARVIS: {reply}")
             self._speak(reply)
         elif "shutdown" in command:
+
             if self._authenticate():
                 reply = "Shutting down. Goodbye, sir."
                 if self.log_callback:
