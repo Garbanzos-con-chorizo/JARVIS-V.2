@@ -32,11 +32,19 @@ class LabModule(QWidget):
         self.pump_button = QPushButton("Toggle Pump")
         self.pump_button.clicked.connect(self._toggle_pump)
         layout.addWidget(self.pump_button)
+        self.light_button = QPushButton("Toggle Light")
+        self.light_button.clicked.connect(self._toggle_light)
+        layout.addWidget(self.light_button)
+        self.fan_button = QPushButton("Toggle Fan")
+        self.fan_button.clicked.connect(self._toggle_fan)
+        layout.addWidget(self.fan_button)
         self.status_label = QLabel()
         layout.addWidget(self.status_label)
 
         self._alert_shown = False
         self._pump_state = False
+        self._light_state = False
+        self._fan_state = False
         self.timer = QTimer(self)
         self.timer.timeout.connect(self._update_environment)
 
@@ -69,6 +77,14 @@ class LabModule(QWidget):
         self.pump_button.setText(
             "Pump ON" if self._pump_state else "Pump OFF"
         )
+        self._light_state = bool(data.get('light', False))
+        self.light_button.setText(
+            "Light ON" if self._light_state else "Light OFF"
+        )
+        self._fan_state = bool(data.get('fan', False))
+        self.fan_button.setText(
+            "Fan ON" if self._fan_state else "Fan OFF"
+        )
         if data.get('gas_alert') and not self._alert_shown:
             QMessageBox.warning(
                 self,
@@ -91,3 +107,29 @@ class LabModule(QWidget):
             self._pump_state = new_state
         except Exception as exc:
             QMessageBox.warning(self, "Error", f"Failed to toggle pump: {exc}")
+
+    def _toggle_light(self) -> None:
+        new_state = not self._light_state
+        state_str = "on" if new_state else "off"
+        try:
+            req = request.Request(
+                f"{LAB_SERVER_URL}/light?state={state_str}",
+                method="POST",
+            )
+            request.urlopen(req, timeout=1)
+            self._light_state = new_state
+        except Exception as exc:
+            QMessageBox.warning(self, "Error", f"Failed to toggle light: {exc}")
+
+    def _toggle_fan(self) -> None:
+        new_state = not self._fan_state
+        state_str = "on" if new_state else "off"
+        try:
+            req = request.Request(
+                f"{LAB_SERVER_URL}/fan?state={state_str}",
+                method="POST",
+            )
+            request.urlopen(req, timeout=1)
+            self._fan_state = new_state
+        except Exception as exc:
+            QMessageBox.warning(self, "Error", f"Failed to toggle fan: {exc}")
