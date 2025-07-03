@@ -1,3 +1,10 @@
+"""Entry point for launching the JARVIS assistant GUI.
+
+Example
+-------
+>>> python main.py
+"""
+
 from PyQt5.QtWidgets import QApplication
 
 from jarvis.gui import JarvisGUI

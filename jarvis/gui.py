@@ -1,5 +1,14 @@
 from __future__ import annotations
 
+"""PyQt GUI for interacting with the JARVIS assistant.
+
+Example
+-------
+>>> from jarvis.gui import JarvisGUI
+>>> app = JarvisGUI()
+>>> app.show()
+"""
+
 import os
 from PyQt5.QtCore import Qt, QTimer, QObject, QEvent
 from PyQt5.QtGui import QMovie

@@ -1,3 +1,11 @@
+"""Simple HTTP server exposing fake sensor data for the LabModule.
+
+Example
+-------
+>>> python raspi_lab_server.py
+Lab server running on port 8000
+"""
+
 import json
 import random
 import threading

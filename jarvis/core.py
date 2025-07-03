@@ -1,3 +1,12 @@
+"""High-level voice interface for the JARVIS assistant.
+
+Example
+-------
+>>> from jarvis.core import JarvisCore
+>>> core = JarvisCore()
+>>> core.start()  # begins listening in a background thread
+"""
+
 import os
 import json
 import speech_recognition as sr

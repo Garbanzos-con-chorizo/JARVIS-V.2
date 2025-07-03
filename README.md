@@ -2,16 +2,32 @@
 
 A minimal voice assistant reminiscent of JARVIS from the Iron Man films. The project now integrates with OpenAI's ChatGPT API for more natural responses and features a PyQt5 GUI.
 
-## Requirements
+## Installation
 
-Install dependencies with:
+Clone the repository and install dependencies within a virtual environment:
 
 ```bash
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
 PyQt5 provides the graphical interface. On some Linux distributions you may need
-to install system Qt packages before installing the Python dependencies.
+to install system Qt packages before installing the Python dependencies. See your
+distribution's documentation for details.
+
+### Mobile Setup
+
+The assistant can be used on Android through **Pydroid 3** or **Termux**. Install
+the dependencies using the instructions above and run `python main.py` as on
+desktop. Due to the extra resource usage, performance on phones may vary.
+
+### Security Considerations
+
+Store sensitive credentials such as `OPENAI_API_KEY` in `config.json` or
+environment variables. Avoid committing these secrets to version control. The
+application makes network requests to OpenAI's API, so ensure your connection is
+trusted when running the assistant.
 
 ### Windows Setup
 

@@ -1,3 +1,11 @@
+"""Wrapper around the OpenAI ChatGPT API used by JARVIS.
+
+Example
+-------
+>>> from jarvis_core.chatgpt import ChatGPTModule
+>>> ChatGPTModule().ask("Hello")
+"""
+
 import os
 import time
 import openai

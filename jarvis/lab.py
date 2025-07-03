@@ -1,5 +1,14 @@
 from __future__ import annotations
 
+"""Interface widgets for monitoring a Raspberry Pi based lab setup.
+
+Example
+-------
+>>> from jarvis.lab import LabModule
+>>> module = LabModule(core=None)
+>>> module.show()
+"""
+
 import json
 import os
 from urllib import request

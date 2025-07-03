@@ -1,3 +1,12 @@
+"""Simplified core engine for voice interaction.
+
+Example
+-------
+>>> from jarvis_core import JarvisCore
+>>> core = JarvisCore()
+>>> core.start()
+"""
+
 import speech_recognition as sr
 import pyttsx3
 from threading import Thread
