@@ -33,6 +33,10 @@ The `ChatGPTModule` wraps all OpenAI API calls and retries automatically on erro
 
 Optionally place `loading.gif` and `background.gif` in `jarvis/assets/` to customize the loading screen and animated background. If these files are not present the GUI falls back to simple colors.
 
+### Offline Speech Recognition
+
+The assistant uses the [Vosk](https://alphacephei.com/vosk/) library for offline speech recognition. Download a model and unpack it into a folder named `model` in the project root. Set `VOSK_MODEL_PATH` to point elsewhere if needed. When the model is missing the assistant falls back to the online Google recognizer.
+
 ## Usage
 
 Run the main application:
@@ -54,16 +58,20 @@ warns if the Pi reports hazardous gas levels. Set the `LAB_SERVER_URL`
 environment variable on the GUI machine if the server is not on
 `localhost:8000`.
 
+
 ### Mobile App Prototype
 
-A small Kivy client in `mobile_app/` allows remote control of JARVIS.
-Start the companion Flask server with:
+A small Kivy client in `mobile_app/` allows remote control of JARVIS. Start the companion Flask server with:
 
 ```bash
 python -m jarvis.server
 ```
 
 Run the mobile app to send commands or to start and stop listening remotely.
+
+### Data Logging
+
+`jarvis/data.py` provides the `DataManager` used to log conversation history and lab readings to an SQLite database named `jarvis.db`. Helper methods such as `average_temperature()` summarise logged data for future display or analysis.
 
 ## License
 

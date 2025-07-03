@@ -11,6 +11,8 @@ DATA = {
     "humidity": 0.0,
     "gas_alert": False,
     "pump": False,
+    "light": False,
+    "fan": False,
 }
 
 
@@ -50,6 +52,28 @@ class LabRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps({"pump": DATA["pump"]}).encode())
+        elif self.path.startswith("/light"):
+            qs = parse_qs(urlparse(self.path).query)
+            state = qs.get("state", [""])[0]
+            if state == "on":
+                DATA["light"] = True
+            elif state == "off":
+                DATA["light"] = False
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"light": DATA["light"]}).encode())
+        elif self.path.startswith("/fan"):
+            qs = parse_qs(urlparse(self.path).query)
+            state = qs.get("state", [""])[0]
+            if state == "on":
+                DATA["fan"] = True
+            elif state == "off":
+                DATA["fan"] = False
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"fan": DATA["fan"]}).encode())
         else:
             self.send_error(404)
 
