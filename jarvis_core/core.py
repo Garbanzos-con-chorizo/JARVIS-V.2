@@ -6,7 +6,6 @@ from threading import Thread
 from typing import Callable, Optional
 from vosk import Model, KaldiRecognizer
 
-from jarvis.data import DataManager
 from .chatgpt import ChatGPTModule
 
 
@@ -24,6 +23,8 @@ class JarvisCore:
         self.listening = False
         self.log_callback = log_callback
         self.speech_detected_callback = speech_detected_callback
+
+        from jarvis.data import DataManager
 
         DataManager.init_db()
 
@@ -84,6 +85,8 @@ class JarvisCore:
         command = command.lower()
         if self.log_callback:
             self.log_callback(f"User: {command}")
+        from jarvis.data import DataManager
+
         DataManager.log_conversation("user", command)
         if "shutdown" in command:
             reply = "Shutting down. Goodbye, sir."
