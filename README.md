@@ -54,6 +54,27 @@ warns if the Pi reports hazardous gas levels. Set the `LAB_SERVER_URL`
 environment variable on the GUI machine if the server is not on
 `localhost:8000`.
 
+## Security
+
+API keys in `config.json` are encrypted using the Fernet symmetric algorithm. Generate a key and set it in the `CONFIG_SECRET` environment variable:
+
+```bash
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Encrypt your OpenAI key with this secret and place the resulting token in `config.json` prefixed with `enc:`:
+
+```bash
+python - <<EOF
+from cryptography.fernet import Fernet
+import os
+secret=os.environ['CONFIG_SECRET'].encode()
+print(Fernet(secret).encrypt(b'YOUR_OPENAI_KEY').decode())
+EOF
+```
+
+Set `PASSWORD` in `config.json` or the `JARVIS_PASSWORD` environment variable to require verification before shutdown.
+
 ## License
 
 This project is licensed under the MIT License.
