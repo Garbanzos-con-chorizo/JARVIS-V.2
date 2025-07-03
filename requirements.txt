@@ -4,3 +4,4 @@ openai
 PyQt5
 vosk
 cryptography
+

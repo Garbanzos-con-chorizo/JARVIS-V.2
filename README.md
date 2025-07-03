@@ -65,6 +65,7 @@ and lab readings to an SQLite database named `jarvis.db`. Helper methods such
 as `average_temperature()` summarise logged data for future display or
 analysis.
 
+
 ## Security
 
 API keys in `config.json` are encrypted using the Fernet symmetric algorithm. Generate a key and set it in the `CONFIG_SECRET` environment variable:
