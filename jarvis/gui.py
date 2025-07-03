@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from PyQt5.QtCore import Qt, QTimer, QObject, QEvent
 from PyQt5.QtGui import QMovie
+from PyQt5.QtWidgets import QApplication
 from PyQt5.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -33,7 +34,9 @@ class JarvisGUI(QMainWindow):
         self.central: QWidget | None = None
 
         self._show_loading()
-        self.core = JarvisCore(log_callback=self.log_message)
+        self.core = JarvisCore(
+            log_callback=self.log_message, speech_detected_callback=self.indicate_speech
+        )
         self.lab_module: LabModule | None = None
 
     # --------------------------- UI Helpers ---------------------------
@@ -131,4 +134,6 @@ class JarvisGUI(QMainWindow):
             self.lab_module = LabModule(self.core)
         self.lab_module.activate()
 
-
+    def indicate_speech(self) -> None:
+        """Provide a short cue when speech is detected."""
+        QApplication.beep()

@@ -33,6 +33,10 @@ The `ChatGPTModule` wraps all OpenAI API calls and retries automatically on erro
 
 Optionally place `loading.gif` and `background.gif` in `jarvis/assets/` to customize the loading screen and animated background. If these files are not present the GUI falls back to simple colors.
 
+### Offline Speech Recognition
+
+The assistant uses the [Vosk](https://alphacephei.com/vosk/) library for offline speech recognition. Download a model and unpack it into a folder named `model` in the project root. Set `VOSK_MODEL_PATH` to point elsewhere if needed. When the model is missing the assistant falls back to the online Google recognizer.
+
 ## Usage
 
 Run the main application:
@@ -53,6 +57,35 @@ pump toggles. The module displays temperature, humidity and pump status, and
 warns if the Pi reports hazardous gas levels. Set the `LAB_SERVER_URL`
 environment variable on the GUI machine if the server is not on
 `localhost:8000`.
+
+### Data Logging
+
+`jarvis/data.py` provides the `DataManager` used to log conversation history
+and lab readings to an SQLite database named `jarvis.db`. Helper methods such
+as `average_temperature()` summarise logged data for future display or
+analysis.
+
+
+## Security
+
+API keys in `config.json` are encrypted using the Fernet symmetric algorithm. Generate a key and set it in the `CONFIG_SECRET` environment variable:
+
+```bash
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Encrypt your OpenAI key with this secret and place the resulting token in `config.json` prefixed with `enc:`:
+
+```bash
+python - <<EOF
+from cryptography.fernet import Fernet
+import os
+secret=os.environ['CONFIG_SECRET'].encode()
+print(Fernet(secret).encrypt(b'YOUR_OPENAI_KEY').decode())
+EOF
+```
+
+Set `PASSWORD` in `config.json` or the `JARVIS_PASSWORD` environment variable to require verification before shutdown.
 
 ## License
 

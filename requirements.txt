@@ -2,4 +2,6 @@ pyttsx3
 SpeechRecognition
 openai
 PyQt5
+vosk
+cryptography
 paho-mqtt  # optional MQTT support
