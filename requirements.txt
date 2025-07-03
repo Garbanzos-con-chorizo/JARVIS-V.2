@@ -6,3 +6,4 @@ Flask
 kivy
 requests
 vosk
+cryptography

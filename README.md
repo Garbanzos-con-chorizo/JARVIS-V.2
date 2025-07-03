@@ -59,6 +59,7 @@ environment variable on the GUI machine if the server is not on
 `localhost:8000`.
 
 
+
 ### Mobile App Prototype
 
 A small Kivy client in `mobile_app/` allows remote control of JARVIS. Start the companion Flask server with:
@@ -71,7 +72,33 @@ Run the mobile app to send commands or to start and stop listening remotely.
 
 ### Data Logging
 
-`jarvis/data.py` provides the `DataManager` used to log conversation history and lab readings to an SQLite database named `jarvis.db`. Helper methods such as `average_temperature()` summarise logged data for future display or analysis.
+`jarvis/data.py` provides the `DataManager` used to log conversation history
+and lab readings to an SQLite database named `jarvis.db`. Helper methods such
+as `average_temperature()` summarise logged data for future display or
+analysis.
+
+
+## Security
+
+API keys in `config.json` are encrypted using the Fernet symmetric algorithm. Generate a key and set it in the `CONFIG_SECRET` environment variable:
+
+```bash
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Encrypt your OpenAI key with this secret and place the resulting token in `config.json` prefixed with `enc:`:
+
+```bash
+python - <<EOF
+from cryptography.fernet import Fernet
+import os
+secret=os.environ['CONFIG_SECRET'].encode()
+print(Fernet(secret).encrypt(b'YOUR_OPENAI_KEY').decode())
+EOF
+```
+
+Set `PASSWORD` in `config.json` or the `JARVIS_PASSWORD` environment variable to require verification before shutdown.
+
 
 ## License
 
