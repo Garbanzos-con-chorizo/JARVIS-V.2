@@ -58,6 +58,16 @@ warns if the Pi reports hazardous gas levels. Set the `LAB_SERVER_URL`
 environment variable on the GUI machine if the server is not on
 `localhost:8000`.
 
+## Testing
+
+Unit tests live in the `tests/` directory. After installing dependencies run:
+
+```bash
+pytest -q
+```
+
+GitHub Actions executes this test suite automatically on each commit.
+
 
 
 ### Mobile App Prototype
@@ -98,7 +108,6 @@ EOF
 ```
 
 Set `PASSWORD` in `config.json` or the `JARVIS_PASSWORD` environment variable to require verification before shutdown.
-
 
 ## License
 
