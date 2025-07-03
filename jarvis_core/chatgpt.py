@@ -1,6 +1,7 @@
 import os
 import time
 import openai
+from openai import APIConnectionError, APITimeoutError, RateLimitError, OpenAIError
 
 
 class ChatGPTModule:
@@ -15,8 +16,8 @@ class ChatGPTModule:
             {
                 "role": "system",
                 "content": (
-                    "You are JARVIS, an advanced AI assistant. Respond in a polite,"
-                    " concise manner."
+                    "You are JARVIS, Tony Stark's AI assistant from the Iron Man films. "
+                    "Respond politely using natural, conversational language."
                 ),
             }
         ]
@@ -39,14 +40,30 @@ class ChatGPTModule:
                 )
                 reply = response.choices[0].message["content"].strip()
                 break
-            except Exception as exc:
+            except RateLimitError as exc:
                 if self.log_callback:
-                    self.log_callback(f"ChatGPT error (attempt {attempt}): {exc}")
-                if attempt == max_retries:
-                    reply = (
-                        "Apologies, I'm experiencing difficulties reaching my knowledge base."
+                    self.log_callback(
+                        f"ChatGPT rate limit (attempt {attempt}): {exc}"
                     )
+                if attempt == max_retries:
+                    reply = "Sorry, the network is busy right now."
                     break
-                time.sleep(1)
+                time.sleep(2 * attempt)
+            except (APIConnectionError, APITimeoutError) as exc:
+                if self.log_callback:
+                    self.log_callback(
+                        f"ChatGPT network error (attempt {attempt}): {exc}"
+                    )
+                if attempt == max_retries:
+                    reply = "Sorry, the network is busy right now."
+                    break
+                time.sleep(attempt)
+            except OpenAIError as exc:
+                if self.log_callback:
+                    self.log_callback(f"ChatGPT error: {exc}")
+                reply = (
+                    "Apologies, I'm experiencing difficulties reaching my knowledge base."
+                )
+                break
         self.conversation.append({"role": "assistant", "content": reply})
         return reply
