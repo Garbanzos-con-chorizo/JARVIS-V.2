@@ -2,6 +2,8 @@ pyttsx3
 SpeechRecognition
 openai
 PyQt5
+Flask
+kivy
+requests
 vosk
 cryptography
-

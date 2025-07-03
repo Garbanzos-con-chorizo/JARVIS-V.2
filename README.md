@@ -58,6 +58,18 @@ warns if the Pi reports hazardous gas levels. Set the `LAB_SERVER_URL`
 environment variable on the GUI machine if the server is not on
 `localhost:8000`.
 
+
+
+### Mobile App Prototype
+
+A small Kivy client in `mobile_app/` allows remote control of JARVIS. Start the companion Flask server with:
+
+```bash
+python -m jarvis.server
+```
+
+Run the mobile app to send commands or to start and stop listening remotely.
+
 ### Data Logging
 
 `jarvis/data.py` provides the `DataManager` used to log conversation history
@@ -86,6 +98,7 @@ EOF
 ```
 
 Set `PASSWORD` in `config.json` or the `JARVIS_PASSWORD` environment variable to require verification before shutdown.
+
 
 ## License
 
