@@ -33,6 +33,10 @@ The `ChatGPTModule` wraps all OpenAI API calls and retries automatically on erro
 
 Optionally place `loading.gif` and `background.gif` in `jarvis/assets/` to customize the loading screen and animated background. If these files are not present the GUI falls back to simple colors.
 
+### Offline Speech Recognition
+
+The assistant uses the [Vosk](https://alphacephei.com/vosk/) library for offline speech recognition. Download a model and unpack it into a folder named `model` in the project root. Set `VOSK_MODEL_PATH` to point elsewhere if needed. When the model is missing the assistant falls back to the online Google recognizer.
+
 ## Usage
 
 Run the main application:
