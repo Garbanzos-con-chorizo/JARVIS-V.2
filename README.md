@@ -60,6 +60,7 @@ environment variable on the GUI machine if the server is not on
 
 
 
+
 ### Mobile App Prototype
 
 A small Kivy client in `mobile_app/` allows remote control of JARVIS. Start the companion Flask server with:
@@ -98,7 +99,6 @@ EOF
 ```
 
 Set `PASSWORD` in `config.json` or the `JARVIS_PASSWORD` environment variable to require verification before shutdown.
-
 
 ## License
 

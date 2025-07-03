@@ -7,7 +7,7 @@ from threading import Thread
 import time
 from cryptography.fernet import Fernet, InvalidToken
 
-from jarvis_core import JarvisCore
+from .iot import IoTClient
 
 __all__ = ["JarvisCore"]
 
@@ -24,7 +24,7 @@ class JarvisCore:
         openai.api_key = api_key
         
         # Model settings
-        self.model = config.get("MODEL") or os.getenv("MODEL", "gpt-3.5-turbo")
+        self.model = self.config.get("MODEL") or os.getenv("MODEL", "gpt-3.5-turbo")
         
         # Chat history (conversation context)
         self.conversation = [
@@ -44,6 +44,8 @@ class JarvisCore:
             self.tts_engine = None
             if self.log_callback:
                 self.log_callback(f"TTS initialization error: {exc}")
+        # Initialize MQTT client
+        self.iot = IoTClient(log_callback=self.log_callback)
         self.listening = False
 
     @staticmethod
@@ -148,7 +150,22 @@ class JarvisCore:
         command = command.lower()
         if self.log_callback:
             self.log_callback(f"User: {command}")
-        if "shutdown" in command:
+        if command.startswith("turn on "):
+            device = command[len("turn on "):].strip()
+            self.iot.publish_command(device, "on")
+            reply = f"Turning on {device}, sir."
+            if self.log_callback:
+                self.log_callback(f"JARVIS: {reply}")
+            self._speak(reply)
+        elif command.startswith("turn off "):
+            device = command[len("turn off "):].strip()
+            self.iot.publish_command(device, "off")
+            reply = f"Turning off {device}, sir."
+            if self.log_callback:
+                self.log_callback(f"JARVIS: {reply}")
+            self._speak(reply)
+        elif "shutdown" in command:
+
             if self._authenticate():
                 reply = "Shutting down. Goodbye, sir."
                 if self.log_callback:
