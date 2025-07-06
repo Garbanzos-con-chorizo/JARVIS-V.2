@@ -3,3 +3,9 @@ SpeechRecognition
 openai
 PyQt5
 pytest
+paho-mqtt  # optional MQTT support
+Flask
+kivy
+requests
+vosk
+cryptography

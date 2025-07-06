@@ -5,8 +5,9 @@ import pyttsx3
 import openai
 from threading import Thread
 import time
+from cryptography.fernet import Fernet, InvalidToken
 
-from jarvis_core import JarvisCore
+from .iot import IoTClient
 
 __all__ = ["JarvisCore"]
 
@@ -18,12 +19,12 @@ class JarvisCore:
         self.log_callback = log_callback
         
         # Load configuration and set up OpenAI API key
-        config = self._load_config()
-        api_key = config.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
+        self.config = self._load_config()
+        api_key = self.config.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
         openai.api_key = api_key
         
         # Model settings
-        self.model = config.get("MODEL") or os.getenv("MODEL", "gpt-3.5-turbo")
+        self.model = self.config.get("MODEL") or os.getenv("MODEL", "gpt-3.5-turbo")
         
         # Chat history (conversation context)
         self.conversation = [
@@ -43,17 +44,33 @@ class JarvisCore:
             self.tts_engine = None
             if self.log_callback:
                 self.log_callback(f"TTS initialization error: {exc}")
+        # Initialize MQTT client
+        self.iot = IoTClient(log_callback=self.log_callback)
         self.listening = False
 
     @staticmethod
     def _load_config():
-        """Load configuration from config.json if present."""
-        config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.json")
+        """Load configuration from config.json and decrypt values if needed."""
+        config_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "config.json"
+        )
         try:
             with open(config_path, "r", encoding="utf-8") as file:
-                return json.load(file)
+                config = json.load(file)
         except (FileNotFoundError, json.JSONDecodeError):
             return {}
+
+        secret = os.getenv("CONFIG_SECRET")
+        enc_key = config.get("OPENAI_API_KEY")
+        if secret and enc_key and isinstance(enc_key, str) and enc_key.startswith("enc:"):
+            token = enc_key[4:].encode()
+            try:
+                config["OPENAI_API_KEY"] = (
+                    Fernet(secret.encode()).decrypt(token).decode()
+                )
+            except InvalidToken:
+                pass
+        return config
 
     def _speak(self, text: str):
         """Speak text using text-to-speech."""
@@ -109,17 +126,52 @@ class JarvisCore:
         """Stop the assistant via the public interface."""
         self.stop_listening()
 
+    def _authenticate(self) -> bool:
+        """Verify the user via password spoken aloud."""
+        password = self.config.get("PASSWORD") or os.getenv("JARVIS_PASSWORD")
+        if not password:
+            return True
+        self._speak("Awaiting password, sir.")
+        try:
+            with sr.Microphone() as source:
+                audio = self.recognizer.listen(source, timeout=5)
+            attempt = self.recognizer.recognize_google(audio).strip().lower()
+            if attempt == password.strip().lower():
+                self._speak("Access granted.")
+                return True
+        except Exception as exc:
+            if self.log_callback:
+                self.log_callback(f"Authentication error: {exc}")
+        self._speak("Access denied.")
+        return False
+
     def _handle_command(self, command: str):
         """Process a recognized voice command."""
         command = command.lower()
         if self.log_callback:
             self.log_callback(f"User: {command}")
-        if "shutdown" in command:
-            reply = "Shutting down. Goodbye, sir."
+        if command.startswith("turn on "):
+            device = command[len("turn on "):].strip()
+            self.iot.publish_command(device, "on")
+            reply = f"Turning on {device}, sir."
             if self.log_callback:
                 self.log_callback(f"JARVIS: {reply}")
             self._speak(reply)
-            self.stop()
+        elif command.startswith("turn off "):
+            device = command[len("turn off "):].strip()
+            self.iot.publish_command(device, "off")
+            reply = f"Turning off {device}, sir."
+            if self.log_callback:
+                self.log_callback(f"JARVIS: {reply}")
+            self._speak(reply)
+        elif "shutdown" in command:
+
+            if self._authenticate():
+                reply = "Shutting down. Goodbye, sir."
+                if self.log_callback:
+                    self.log_callback(f"JARVIS: {reply}")
+                self._speak(reply)
+                self.stop()
         else:
             response = self._chatgpt_response(command)
             if self.log_callback:
